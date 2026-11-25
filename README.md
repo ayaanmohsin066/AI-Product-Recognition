@@ -1,5 +1,7 @@
 # AI Product Recognition V2
 
+Original project by [jyotisihagjaat](https://github.com/jyotisihagjaat). This version builds on that work with the fixes described in [What changed in this update](#what-changed-in-this-update).
+
 This version learns your own 13 physical products from webcam photos. The previous YOLO-World version tried generic text-based detection, which can be slow and unreliable for specific products.
 
 ## Important
@@ -13,6 +15,26 @@ Double-click `setup.bat`. It creates `.venv` and installs `requirements.txt`. If
 
 ## Run order
 `setup.bat` -> `src\collect_data.py` -> `src\train_model.py` -> `run.bat`
+
+## What changed in this update
+The original project already had the right idea: learn your own products from webcam photos instead of relying on generic text prompts. This update keeps that design, the same tools and the same training recipe, and fixes the things that stopped it working reliably.
+
+| Change | Before | Now | Why it is better |
+|---|---|---|---|
+| Install | `requirements.txt` was one line with literal `\n` characters, so `pip install -r` failed | Two proper lines | `setup.bat` installs cleanly on a fresh machine |
+| Launcher | `run.bat` started the old YOLO-World version | `run.bat` starts V2 recognition | Double-clicking runs the app the README describes |
+| What the model sees | Trained on a centred square at 160px, but recognised the full frame at 224px | Recognition uses the same centred square at 160px, shown as a green box | The model is shown the same kind of image it learned from, with no retraining needed |
+| Unsure predictions | Always showed the top guess, even at low confidence | Shows "Unknown" below a threshold (60% by default) | Fewer confident-looking wrong answers |
+| Labels | Showed folder names like `body_lotion` | Shows display names like `Body Lotion` | Easier to read |
+| Missing model or camera | Crashed with a Python traceback | Prints what to do and exits cleanly | Clear next steps instead of an error dump |
+| Lost camera feed | Retried in a tight loop forever | Pauses between retries and stops after about 1.5 seconds | No frozen window or maxed-out CPU |
+| Saving photos | Deleting a photo could make the next save overwrite an existing one | New photos always get the next free number | Collected photos are never lost |
+| Training with too few photos | Deleted `dataset/` first, then stopped at the first short product | Checks every product first and lists all the short ones | Nothing is deleted when training cannot start, and you see every product to fix at once |
+| Class list | Defined twice (V1 and V2) | One list in `src/labels.py` | Products cannot drift out of sync |
+| Settings | Scattered through several files | In `src/config.py` | One place to change the camera, threshold or crop |
+| Tests | None | `pytest` tests for the helpers and labels | Changes can be checked without a camera |
+
+The 60% threshold is a starting point, not a measured value. If good predictions show as "Unknown", lower `CONF_THRESHOLD` in `src/config.py`; if wrong guesses get through, raise it.
 
 ## 1. Collect photos
 ```powershell
