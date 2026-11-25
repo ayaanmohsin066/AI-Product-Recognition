@@ -1,6 +1,6 @@
 import cv2
 from labels import PRODUCTS
-from config import ROOT, CAMERA_INDEX, CROP_RATIO, BOX_COLOR, center_square
+from config import ROOT, CAMERA_INDEX, CROP_RATIO, BOX_COLOR, center_square, next_image_number
 
 SAVE = ROOT / "raw_images"
 
@@ -16,6 +16,7 @@ def main():
     while True:
         ok, frame = cap.read()
         if not ok:
+            print("Could not read from the camera. Stopping.")
             break
         h, w = frame.shape[:2]
         x1, y1, x2, y2 = center_square(h, w, CROP_RATIO)
@@ -27,12 +28,12 @@ def main():
         cv2.putText(view, msg, (10,h-15), cv2.FONT_HERSHEY_SIMPLEX, .6, (0,255,255), 2)
         cv2.imshow("Collect Product Photos", view)
         key = cv2.waitKey(1) & 0xFF
-        if key == ord("q"):
+        if key in (ord("q"), ord("Q")):
             break
         if key == 32 and selected:
             _, name, folder, _ = selected
             crop = frame[y1:y2, x1:x2]
-            n = len(list((SAVE/folder).glob("*.jpg"))) + 1
+            n = next_image_number(p.stem for p in (SAVE/folder).glob("*.jpg"))
             cv2.imwrite(str(SAVE/folder/f"{n:04d}.jpg"), crop)
             print(f"Saved {name}: {n}")
         else:
